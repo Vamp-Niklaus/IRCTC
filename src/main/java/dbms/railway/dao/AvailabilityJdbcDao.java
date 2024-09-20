@@ -22,7 +22,7 @@ public class AvailabilityJdbcDao {
     String sqldriver="com.mysql.cj.jdbc.Driver";
     String urlname="jdbc:mysql://localhost:3306/railway";
     String userid="root";
-    String pass="R@k35h69";
+    String pass="xxxxxxxx";
 
     public List<Availability> getTrainsbysearch(String date, String St1, String St2) throws ClassNotFoundException, SQLException{
 
