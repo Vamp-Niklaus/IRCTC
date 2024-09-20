@@ -442,7 +442,7 @@ CREATE PROCEDURE `AvailablityCheck`(
     IN station_code2 VARCHAR(10)
 )
 BEGIN
-call before_search2();
+call before_search();
 SET @s1 = station_code1;
 SET @s2 = station_code2;
 SET @lola = CONCAT('%', @s1,'%',@s2,'%');
