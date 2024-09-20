@@ -1,8 +1,8 @@
 FROM maven:3.8.3-openjdk-17 AS build
-COPY. .
+COPY . .
 RUN mvn clean package -DskipTests
 
 FROM openjdk:17.0.1-jdk-slim
-COPY--from=build /target/railway-0.0.1-SNAPSHOT.jar railway.jar
+COPY --from=build /target/railway-0.0.1-SNAPSHOT.jar railway.jar
 EXPOSE 8080
-ENTRYPOINT["java","-jar","railway.jar"]
+ENTRYPOINT ["java","-jar","railway.jar"]
