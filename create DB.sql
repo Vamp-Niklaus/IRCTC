@@ -2,7 +2,7 @@ create database railway;
 use railway;
 
 
-CREATE TABLE `user` (
+CREATE TABLE `User` (
   `userName` varchar(50) NOT NULL,
   `firstName` varchar(50) DEFAULT NULL,
   `lastName` varchar(50) DEFAULT NULL,
@@ -17,7 +17,7 @@ CREATE TABLE `user` (
 
 
 
-INSERT INTO user
+INSERT INTO User
 VALUES ('rakesh','rakesh','kumar','9587162482','rakeshxxxxxxxx1111@gmail.com','957841256314','2002-12-09','male','rakesh');
 
 CREATE TABLE `stations` (
@@ -429,6 +429,44 @@ BEGIN
     -- Delete past rows
     DELETE FROM full_first_seat
     WHERE start_time < NOW();
+END$$
+DELIMITER ;
+
+
+
+
+DELIMITER $$
+CREATE PROCEDURE `AvailablityCheck`(
+    IN departure_date datetime,
+    IN station_code1 VARCHAR(10),
+    IN station_code2 VARCHAR(10)
+)
+BEGIN
+call before_search2();
+SET @s1 = station_code1;
+SET @s2 = station_code2;
+SET @lola = CONCAT('%', @s1,'%',@s2,'%');
+select  
+t.id as train_id,f.start_time as train_time,t.Name as train_name,  DATE_FORMAT(ADDTIME(f.start_time, j.arr ), '%Y/%m/%d %H:%i:%s') as arrival_time ,
+ DATE_FORMAT( DATE_ADD(ADDTIME(f.start_time, j.arr ), INTERVAL j.halt MINUTE) , '%Y/%m/%d %H:%i:%s') as departure_time,
+ station_code1 as st1,station_code2 as st2,
+((select dist from journey as j2 where j2.train_id = t.id and j2.st_code = station_code2)-j.dist) as distance,
+
+(GREATEST(0,f.AC1-1)*18 + LEAST(1,f.AC1)*f.SAC1 + REUSE_SEATS(t.id,f.start_time,station_code1,station_code2,"AC1")) as AC1, FFAC1,
+Waiting(t.id,f.start_time,"AC1") as WAC1,(t.AC1!=0) as IAC1,
+(GREATEST(0,f.AC2-1)*2 + LEAST(1,f.AC2)*f.SAC2 + REUSE_SEATS(t.id,f.start_time,station_code1,station_code2,"AC2")) as AC2, FFAC2,
+Waiting(t.id,f.start_time,"AC2") as WAC2,(t.AC2!=0) as IAC2,
+(GREATEST(0,f.AC3-1)*72 + LEAST(1,f.AC3)*f.SAC3 + REUSE_SEATS(t.id,f.start_time,station_code1,station_code2,"AC3")) as AC3, FFAC3,
+Waiting(t.id,f.start_time,"AC3") as WAC3,(t.AC3!=0) as IAC3,
+(GREATEST(0,f.SLP-1)*80 + LEAST(1,f.SLP)*f.SSLP + REUSE_SEATS(t.id,f.start_time,station_code1,station_code2,"SLP")) as SLP, FFSLP,
+Waiting(t.id,f.start_time,"SLP") as WSLP,(t.SLP!=0) as ISLP,
+(GREATEST(0,f.GEN-1)*90 + LEAST(1,f.GEN)*f.SGEN + REUSE_SEATS(t.id,f.start_time,station_code1,station_code2,"GEN")) as GEN , FFGEN,
+Waiting(t.id,f.start_time,"GEN") as WGEN,(t.GEN!=0) as IGEN
+FROM trains as t,full_first_seat AS f,journey as j
+where t.id in (SELECT id from trains where path like @lola) and f.train_id in (SELECT id from trains where path like @lola) and t.id=f.train_id and 
+(ADDTIME(f.start_time , (select arr from journey as j where j.train_id=t.id and j.st_code=@s1 )) >= departure_date )and
+ (ADDTIME(f.start_time , (select arr from journey as j where j.train_id=t.id and j.st_code=@s1 ))<= ADDTIME(departure_date, "23:59:59"))
+ and j.train_id = t.id and j.st_code = station_code1;
 END$$
 DELIMITER ;
 
