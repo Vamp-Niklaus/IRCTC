@@ -47,31 +47,31 @@
                 <th th:text="${entry.departureTime}"></th>
                 <th th:text="${entry.distance}"></th>
                 <th th:if="${entry.iac1 eq false}"> <!-- Do nothing --></th>
-                <th th:if="${entry.ac1 eq 0 and entry.iac1 eq true}" th:text="${entry.wac1}"></th>
+                <th th:if="${entry.ac1 eq 0 and entry.iac1 eq true}" th:text="-${entry.wac1}"></th>
                 <th th:if="${entry.ac1 ne 0 and entry.iac1 eq true}" th:text="${entry.ac1}"></th>
                 <th th:if="${entry.iac1 eq false}"> <!-- Do nothing --></th>
                 <th th:if="${entry.iac1 eq true}" th:text="${entry.distance*entry.fac1}"></th>
 
                 <th th:if="${entry.iac2 eq false}"> <!-- Do nothing --></th>
-                <th th:if="${entry.ac2 eq 0 and entry.iac2 eq true}" th:text="${entry.wac2}"></th>
+                <th th:if="${entry.ac2 eq 0 and entry.iac2 eq true}" th:text="-${entry.wac2}"></th>
                 <th th:if="${entry.ac2 ne 0 and entry.iac2 eq true}" th:text="${entry.ac2}"></th>
                 <th th:if="${entry.iac2 eq false}"> <!-- Do nothing --></th>
                 <th th:if="${entry.iac2 eq true}" th:text="${entry.distance*entry.fac2}"></th>
 
                 <th th:if="${entry.iac3 eq false}"> <!-- Do nothing --></th>
-                <th th:if="${entry.ac3 eq 0 and entry.iac3 eq true}" th:text="${entry.wac3}"></th>
+                <th th:if="${entry.ac3 eq 0 and entry.iac3 eq true}" th:text="-${entry.wac3}"></th>
                 <th th:if="${entry.ac3 ne 0 and entry.iac3 eq true}" th:text="${entry.ac3}"></th>
                 <th th:if="${entry.iac3 eq false}"> <!-- Do nothing --></th>
                 <th th:if="${entry.iac3 eq true}" th:text="${entry.distance*entry.fac3}"></th>
 
                 <th th:if="${entry.islp eq false}"> <!-- Do nothing --></th>
-                <th th:if="${entry.slp eq 0 and entry.slp eq true}" th:text="${entry.wslp}"></th>
+                <th th:if="${entry.slp eq 0 and entry.slp eq true}" th:text="-${entry.wslp}"></th>
                 <th th:if="${entry.slp ne 0 and entry.islp eq true}" th:text="${entry.slp}"></th>
                 <th th:if="${entry.islp eq false}"> <!-- Do nothing --></th>
                 <th th:if="${entry.islp eq true}" th:text="${entry.distance*entry.fslp}"></th>
 
                 <th th:if="${entry.igen eq false}"> <!-- Do nothing --></th>
-                <th th:if="${entry.gen eq 0 and entry.igen eq true}" th:text="${entry.wgen}"></th>
+                <th th:if="${entry.gen eq 0 and entry.igen eq true}" th:text="-${entry.wgen}"></th>
                 <th th:if="${entry.gen ne 0 and entry.igen eq true}" th:text="${entry.gen}"></th>
                 <th th:if="${entry.igen eq false}"> <!-- Do nothing --></th>
                 <th th:if="${entry.igen eq true}" th:text="${entry.distance*entry.fgen}"></th>
