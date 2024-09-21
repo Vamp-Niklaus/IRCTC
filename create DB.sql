@@ -37,7 +37,7 @@ CREATE TABLE `class` (
 INSERT INTO class (name, seat) 
 VALUES 
 ('AC1', '18'),
-('AC2', '54'),
+('AC2', '2'), -- it should be 56 but for various testing as waiting list taking it 2 only
 ('AC3', '72'),
 ('SLP', '80'),
 ('GEN', '90');
@@ -122,7 +122,7 @@ CREATE TABLE `reuse_seat` (
 
 
 
-CREATE TABLE `ticket` (
+CREATE TABLE `Ticket` (
   `pnr` varchar(26) NOT NULL,
   `train_id` int DEFAULT NULL,
   `source` varchar(10) DEFAULT NULL,
@@ -144,7 +144,7 @@ CREATE TABLE `ticket` (
 ) ;
 
 
-CREATE TABLE `past_ticket` (
+CREATE TABLE `past_Ticket` (
   `pnr` varchar(26) NOT NULL,
   `train_id` int DEFAULT NULL,
   `source` varchar(10) DEFAULT NULL,
@@ -302,7 +302,7 @@ BEGIN
 	set @pn2 = DATE_FORMAT(TIME(t), '%H:%i');
     set @lola = concat(@tid,'-',@pn1,'-',@pn2,'-%');
     
-    select count(*) INTO result from ticket as r
+    select count(*) INTO result from Ticket as r
     where r.pnr  like @lola and r.class = class and r.cnf = false;
     RETURN result;
 END;
@@ -319,7 +319,7 @@ BEGIN
 	DECLARE result INT;
 	set @p=substring(pn,1,(length(pn) - locate('-',reverse(pn)) + 1 ));
     set @lola = concat(@p,'%');
-    select count(*) INTO result from ticket as r
+    select count(*) INTO result from Ticket as r
     where r.pnr  like @lola and r.class = cla and r.cnf = false and r.booked_at<tim;
     RETURN result;
 END;
@@ -434,9 +434,8 @@ DELIMITER ;
 
 
 
-
 DELIMITER $$
-CREATE PROCEDURE `AvailablityCheck`(
+CREATE  PROCEDURE "AvailablityCheck"(
     IN departure_date datetime,
     IN station_code1 VARCHAR(10),
     IN station_code2 VARCHAR(10)
@@ -452,23 +451,24 @@ t.id as train_id,f.start_time as train_time,t.Name as train_name,  DATE_FORMAT(A
  station_code1 as st1,station_code2 as st2,
 ((select dist from journey as j2 where j2.train_id = t.id and j2.st_code = station_code2)-j.dist) as distance,
 
-(GREATEST(0,f.AC1-1)*18 + LEAST(1,f.AC1)*f.SAC1 + REUSE_SEATS(t.id,f.start_time,station_code1,station_code2,"AC1")) as AC1, FFAC1,
-Waiting(t.id,f.start_time,"AC1") as WAC1,(t.AC1!=0) as IAC1,
-(GREATEST(0,f.AC2-1)*2 + LEAST(1,f.AC2)*f.SAC2 + REUSE_SEATS(t.id,f.start_time,station_code1,station_code2,"AC2")) as AC2, FFAC2,
-Waiting(t.id,f.start_time,"AC2") as WAC2,(t.AC2!=0) as IAC2,
-(GREATEST(0,f.AC3-1)*72 + LEAST(1,f.AC3)*f.SAC3 + REUSE_SEATS(t.id,f.start_time,station_code1,station_code2,"AC3")) as AC3, FFAC3,
-Waiting(t.id,f.start_time,"AC3") as WAC3,(t.AC3!=0) as IAC3,
-(GREATEST(0,f.SLP-1)*80 + LEAST(1,f.SLP)*f.SSLP + REUSE_SEATS(t.id,f.start_time,station_code1,station_code2,"SLP")) as SLP, FFSLP,
-Waiting(t.id,f.start_time,"SLP") as WSLP,(t.SLP!=0) as ISLP,
-(GREATEST(0,f.GEN-1)*90 + LEAST(1,f.GEN)*f.SGEN + REUSE_SEATS(t.id,f.start_time,station_code1,station_code2,"GEN")) as GEN , FFGEN,
-Waiting(t.id,f.start_time,"GEN") as WGEN,(t.GEN!=0) as IGEN
+(GREATEST(0,f.AC1-1)*(SELECT seat from class where name = 'AC1') + LEAST(1,f.AC1)*f.SAC1 + REUSE_SEATS(t.id,f.start_time,station_code1,station_code2,'AC1')) as AC1, FFAC1,
+Waiting(t.id,f.start_time,'AC1') as WAC1,(t.AC1<>0) as IAC1,
+(GREATEST(0,f.AC2-1)*(SELECT seat from class where name = 'AC2') + LEAST(1,f.AC2)*f.SAC2 + REUSE_SEATS(t.id,f.start_time,station_code1,station_code2,'AC2')) as AC2, FFAC2,
+Waiting(t.id,f.start_time,'AC2') as WAC2,(t.AC2<>0) as IAC2,
+(GREATEST(0,f.AC3-1)*(SELECT seat from class where name = 'AC2') + LEAST(1,f.AC3)*f.SAC3 + REUSE_SEATS(t.id,f.start_time,station_code1,station_code2,'AC3')) as AC3, FFAC3,
+Waiting(t.id,f.start_time,'AC3') as WAC3,(t.AC3<>0) as IAC3,
+(GREATEST(0,f.SLP-1)*(SELECT seat from class where name = 'SLP') + LEAST(1,f.SLP)*f.SSLP + REUSE_SEATS(t.id,f.start_time,station_code1,station_code2,'SLP')) as SLP, FFSLP,
+Waiting(t.id,f.start_time,'SLP') as WSLP,(t.SLP<>0) as ISLP,
+(GREATEST(0,f.GEN-1)*(SELECT seat from class where name = 'GEN') + LEAST(1,f.GEN)*f.SGEN + REUSE_SEATS(t.id,f.start_time,station_code1,station_code2,'GEN')) as GEN , FFGEN,
+Waiting(t.id,f.start_time,'GEN') as WGEN,(t.GEN<>0) as IGEN
 FROM trains as t,full_first_seat AS f,journey as j
 where t.id in (SELECT id from trains where path like @lola) and f.train_id in (SELECT id from trains where path like @lola) and t.id=f.train_id and 
 (ADDTIME(f.start_time , (select arr from journey as j where j.train_id=t.id and j.st_code=@s1 )) >= departure_date )and
- (ADDTIME(f.start_time , (select arr from journey as j where j.train_id=t.id and j.st_code=@s1 ))<= ADDTIME(departure_date, "23:59:59"))
+ (ADDTIME(f.start_time , (select arr from journey as j where j.train_id=t.id and j.st_code=@s1 ))<= ADDTIME(departure_date, '23:59:59'))
  and j.train_id = t.id and j.st_code = station_code1;
 END$$
 DELIMITER ;
+
 
 
 
@@ -539,15 +539,15 @@ START TRANSACTION;
         set ff=@f13;
 		DEALLOCATE PREPARE stmt;
         
-        insert into ticket values
+        insert into Ticket values
         (CONCAT(@tid,'-', @pn1,'-',@pn2,'-',@pn3),train_id,station_code1,station_code2,@str2,ADDTIME(departure_date_time,arr1),
         ADDTIME(departure_date_time,arr2),class,C,S,(d2-d1)*ff,user,CURRENT_TIMESTAMP(6),pfname,plname,age,true);
         
         if (LOCATE('|', @str1)>0) then
-			insert into reuse_seat values (train_id, departure_date_time, class,C,S,@str1);
+			insert into reuse_seat (`train_id`, `start_time`, `class`, `C_N`, `S_N`, `path`) values (train_id, departure_date_time, class,C,S,@str1);
         end if;
         if (LOCATE('|', @str3)>0) then
-			insert into reuse_seat values (train_id, departure_date_time, class,C,S,@str3);
+			insert into reuse_seat  (`train_id`, `start_time`, `class`, `C_N`, `S_N`, `path`) values (train_id, departure_date_time, class,C,S,@str3);
         end if;
 
         else 
@@ -560,7 +560,7 @@ START TRANSACTION;
 				set C = @zC;
 				set S = @zS;
 				set pn = @zpn;
-				set @dq = concat('UPDATE full_first_seat as f SET pnr = pnr + 1, ',@cla,' = CASE WHEN S',@cla,' = 1 THEN ',@cla,' - 1 ELSE ',@cla,' END, S',@cla,' = CASE WHEN S',@cla,' = 1 THEN (SELECT seat FROM class AS c WHERE c.name = "',@cla,'" ) ELSE S',@cla,' -1 END where f.train_id=train_id and f.start_time = ', QUOTE(@depa), ';');
+				set @dq = concat('UPDATE full_first_seat as f SET pnr = pnr + 1, ',@cla,' = CASE WHEN S',@cla,' = 1 THEN ',@cla,' - 1 ELSE ',@cla,' END, S',@cla,' = CASE WHEN S',@cla,' = 1 THEN (SELECT seat FROM class AS c WHERE c.name = \'',@cla,'\' ) ELSE S',@cla,' -1 END where f.train_id=train_id and f.start_time = ', QUOTE(@depa), ';');
 				PREPARE stmt FROM @dq;
 				EXECUTE stmt;
 				DEALLOCATE PREPARE stmt;
@@ -588,14 +588,14 @@ START TRANSACTION;
 				EXECUTE stmt;
 				set ff=@f12;
 				DEALLOCATE PREPARE stmt;
-				insert into ticket values
+				insert into Ticket values
 				(CONCAT(@tid,'-', @pn1,'-',@pn2,'-',@pn3),train_id,station_code1,station_code2,@str2,ADDTIME(departure_date_time,arr1),
 				ADDTIME(departure_date_time,arr2),class,C,S,(d2-d1)*ff,user,CURRENT_TIMESTAMP(6),pfname,plname,age,true);
 				if (LOCATE('|', @str1)>0) then
-					insert into reuse_seat values (train_id, departure_date_time, class,C,S,@str1);
+					insert into reuse_seat (`train_id`, `start_time`, `class`, `C_N`, `S_N`, `path`) values (train_id, departure_date_time, class,C,S,@str1);
 				end if;
 				if (LOCATE('|', @str3)>0) then
-					insert into reuse_seat values (train_id, departure_date_time, class,C,S,@str3);
+					insert into reuse_seat (`train_id`, `start_time`, `class`, `C_N`, `S_N`, `path`) values (train_id, departure_date_time, class,C,S,@str3);
 				end if;
             else
 					SET @tid = train_id;
@@ -622,7 +622,7 @@ START TRANSACTION;
 					end if;
 					set @str2 = SUBSTRING(@str0, 1, @p2-@p1+@l2);
 					DEALLOCATE PREPARE stmt;
-					INSERT INTO `railway`.`ticket` (`pnr`, `train_id`, `source`, `destination`,`path`, `start_time`, `end_time`, `class`,`fair` ,`booked_by`, `booked_at`, `passenger_fname`, `passenger_lname`, `passenger_age`, `cnf`) VALUES
+					INSERT INTO `railway`.`Ticket` (`pnr`, `train_id`, `source`, `destination`,`path`, `start_time`, `end_time`, `class`,`fair` ,`booked_by`, `booked_at`, `passenger_fname`, `passenger_lname`, `passenger_age`, `cnf`) VALUES
 					(CONCAT(@tid,'-', @pn1,'-',@pn2,'-',@pn3), train_id, station_code1, station_code2,  @str2  ,ADDTIME(departure_date_time,arr1), ADDTIME(departure_date_time,arr2), class,(d2-d1)*ff,user,CURRENT_TIMESTAMP(6),pfname,plname,age, false);
             end if;
 
@@ -647,7 +647,7 @@ BEGIN
 
     DECLARE cur CURSOR FOR
         SELECT pnr,source,destination,path,class
-        FROM ticket as t where t.pnr like concat(pnrid,'%') and t.cnf = 0 order by t.booked_at;
+        FROM Ticket as t where t.pnr like concat(pnrid,'%') and t.cnf = 0 order by t.booked_at;
 
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
 
@@ -679,13 +679,13 @@ BEGIN
 		end if;
         set @str1 = SUBSTRING(@P, 1, @p1+@l1-1);
         set @str2 = SUBSTRING(@str0, 1, @p2-@p1+@l2);
-		update ticket
+		update Ticket
         set cnf=1,C_N=@C,S_N=@S where pnr = pn;
         if (LOCATE('|', @str1)>0) then
-			insert into reuse_seat values (train_id, departure_date_time, class,C,S,@str1);
+			insert into reuse_seat (`train_id`, `start_time`, `class`, `C_N`, `S_N`, `path`) values (train_id, departure_date_time, class,C,S,@str1);
         end if;
         if (LOCATE('|', @str3)>0) then
-			insert into reuse_seat values (train_id, departure_date_time, class,C,S,@str3);
+			insert into reuse_seat (`train_id`, `start_time`, `class`, `C_N`, `S_N`, `path`) values (train_id, departure_date_time, class,C,S,@str3);
         end if;
         end if;
     END LOOP;
@@ -694,22 +694,21 @@ END$$
 DELIMITER ;
 
 
-
 DELIMITER $$
-CREATE PROCEDURE `iscancel`(
+CREATE PROCEDURE "iscancel"(
  IN pnid varchar(26),
  IN k Boolean
  )
 BEGIN
  	select pnr,train_id,source,destination,path,start_time,end_time,class,C_N,S_N,fair,booked_by,booked_at,passenger_fname,passenger_lname,passenger_age,cnf
      into @pnr,@tid,@sour,@dest,@path,@st,@et,@cla,@cn,@sn,@fair,@bby,@bat,@pfn,@pln,@pa,@cnf
-     from ticket where pnr = pnid;
-     delete from ticket where pnr=pnid;
-     if (!k or @sn=null) then
- 		INSERT INTO `railway`.`past_ticket` (`pnr`, `train_id`, `source`, `destination`, `path`, `start_time`, `end_time`, `class`, `C_N`, `S_N`, `fair`, `booked_by`, `booked_at`, `passenger_fname`, `passenger_lname`, `passenger_age`, `cancelled`) 
+     from Ticket where pnr = pnid;
+     delete from Ticket where pnr=pnid;
+     if ( NOT k or @sn=null) then
+ 		INSERT INTO `railway`.`past_Ticket` (`pnr`, `train_id`, `source`, `destination`, `path`, `start_time`, `end_time`, `class`, `C_N`, `S_N`, `fair`, `booked_by`, `booked_at`, `passenger_fname`, `passenger_lname`, `passenger_age`, `cancelled`) 
  		VALUES (@pnr,@tid,@sour,@dest,@path,@st,@et,@cla,@cn,@sn,@fair,@bby,@bat,@pfn,@pln,@pa,0);
      else
- 		INSERT INTO `railway`.`past_ticket` (`pnr`, `train_id`, `source`, `destination`, `path`, `start_time`, `end_time`, `class`, `C_N`, `S_N`, `fair`, `booked_by`, `booked_at`, `passenger_fname`, `passenger_lname`, `passenger_age`, `cancelled`) 
+ 		INSERT INTO `railway`.`past_Ticket` (`pnr`, `train_id`, `source`, `destination`, `path`, `start_time`, `end_time`, `class`, `C_N`, `S_N`, `fair`, `booked_by`, `booked_at`, `passenger_fname`, `passenger_lname`, `passenger_age`, `cancelled`) 
  		VALUES (@pnr,@tid,@sour,@dest,@path,@st,@et,@cla,@cn,@sn,@fair,@bby,@bat,@pfn,@pln,@pa,1);
          set @i = LOCATE('-', @pnr);
          set @dat = SUBSTRING(@pnr, @i+1, 10);
@@ -739,7 +738,7 @@ BEGIN
  			set @rem = substring(@path,1,(length(@path) - locate('|',reverse(@path)) + 1 ));
  			set @lola = concat(@rig,'%');
  		END WHILE;
-        insert into reuse_seat values(@tid,@timestam,@cla,@cn,@sn,@path);
+        insert into reuse_seat (`train_id`, `start_time`, `class`, `C_N`, `S_N`, `path`) values(@tid,@timestam,@cla,@cn,@sn,@path);
          if(Waiting(@tid,@timestam,@cla)>0) then
              set @d=substring(@pnr,1,(length(@pnr) - locate('-',reverse(@pnr)) + 1 ));
  			call checkwait(@tid,@timestam,@d);
