@@ -12,7 +12,7 @@ public class ReserveJdbcDao {
     String sqldriver="com.mysql.cj.jdbc.Driver";
     String urlname="jdbc:mysql://localhost:3306/railway";
     String userid="root";
-    String pass="R@k35h69";
+    String pass="xxxxxxxx";
     public void reserve(Long trainId,String time,String cla,String st1,String st2,String userName,String firstName,String lastName,Integer age) throws ClassNotFoundException, SQLException {
         Class.forName(sqldriver);
         String url=urlname;
