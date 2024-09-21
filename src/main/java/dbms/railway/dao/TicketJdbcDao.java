@@ -77,7 +77,7 @@ public class TicketJdbcDao {
 //    SELECT * , WL(t.pnr, t.booked_at,t.class) as WL FROM ticket as t;
     public List<Ticket2> getTicketByUsername(String booked_by) {
         String sql = "SELECT * , WL(t.pnr, t.booked_at,t.class) as WL, u.name as tName  FROM Ticket as t, trains as u WHERE u.id = t.train_id and  booked_by = ";
-        sql = sql +'"' +booked_by +'"';
+        sql = sql +"'" +booked_by +"'";
         sql = sql + " ORDER BY t.start_time";
         System.out.println(sql);
         System.out.println("reached");
